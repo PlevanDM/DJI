@@ -88,12 +88,6 @@ MODEL_LABELS = {
     "WM232": "Air 2S (WM232)",
     "WM260": "Mavic 3 / 3 Classic (WM260)",
     "WM247": "Mavic 2 Enterprise Advanced (WM247)",
-    "WM161": "Mini 2 / SE (WM161)",
-    "WM162": "Mini 3 (WM162)",
-    "WM170": "Avata (WM170)",
-    "WM261": "Mavic 3 Pro (WM261)",
-    "WM262": "Mavic 3E/3T/3M (WM262)",
-    "WM236": "Air 3 (WM236)",
 }
 
 # Alternative product aliases provided by OG Service Tool.
@@ -121,7 +115,6 @@ ALT_PRODUCT_CODES = {
     "MAVAIR2": "WM231",
     "MAVAIR2S": "WM232",
     "MAV3": "WM260",
-    "M3P": "WM261",
 }
 
 MANUAL_LINKS = [
@@ -235,18 +228,10 @@ def iter_serial_ports() -> List[str]:
 class CalibrationCommand:
     port: Optional[str]
     product_code: str
-    mode: str
-    service: str = "GimbalCalib"
+    mode: str  # "JointCoarse" or "LinearHall"
     verbose: int = 1
     timeout_ms: int = 500
     bulk: bool = False
-    key: Optional[str] = None
-    force: bool = False
-    param_name: Optional[str] = None
-    param_value: Optional[str] = None
-    start: int = 0
-    count: int = 100
-    alt: bool = False
 
     def build_subprocess_args(self) -> List[str]:
         base_cmd = [
@@ -263,23 +248,7 @@ class CalibrationCommand:
         base_cmd.extend(["-v"] * max(self.verbose, 0))
         base_cmd.extend(["-w", str(self.timeout_ms)])
         base_cmd.append(self.product_code)
-        base_cmd.extend([self.service, self.mode])
-
-        if self.service == "CameraCalib" and self.mode == "EncryptPair":
-            if self.key:
-                base_cmd.extend(["--pairkey", self.key])
-            if self.force:
-                base_cmd.append("--force")
-        elif self.service == "FlycParam":
-            if self.mode == "list":
-                base_cmd.extend(["--start", str(self.start), "--count", str(self.count)])
-            elif self.mode == "get":
-                base_cmd.append(self.param_name or "")
-            elif self.mode == "set":
-                base_cmd.extend([self.param_name or "", self.param_value or ""])
-            if self.alt:
-                base_cmd.append("--alt")
-
+        base_cmd.extend(["GimbalCalib", self.mode])
         return base_cmd
 
 
@@ -375,15 +344,11 @@ class CalibrationApp(tk.Tk):
         guides_tab = ttk.Frame(self.notebook)
         resources_tab = ttk.Frame(self.notebook)
 
-        self.notebook.add(calibration_tab, text="Калібрування гімбала")
-        camera_tab = ttk.Frame(self.notebook)
-        flyc_tab = ttk.Frame(self.notebook)
-        self.notebook.add(camera_tab, text="Калібрування камери (P3X)")
-        self.notebook.add(flyc_tab, text="Параметри Flight Controller")
+        self.notebook.add(calibration_tab, text="Калібрування")
         self.notebook.add(guides_tab, text="Покрокові інструкції")
         self.notebook.add(resources_tab, text="Офіційні ресурси")
 
-        # --- Gimbal Calibration tab
+        # --- Calibration tab
         connection_frame = ttk.LabelFrame(calibration_tab, text="Підключення")
         connection_frame.pack(fill=tk.X, padx=10, pady=10)
 
@@ -498,127 +463,6 @@ class CalibrationApp(tk.Tk):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.log_text.configure(yscrollcommand=scrollbar.set)
 
-        # --- Camera Calibration tab
-        cam_action_frame = ttk.LabelFrame(camera_tab, text="Дії калібрування камери")
-        cam_action_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        self.check_btn = ttk.Button(
-            cam_action_frame,
-            text="Перевірка шифрування (EncryptCheck)",
-            command=lambda: self.start_calibration("EncryptCheck", "CameraCalib"),
-        )
-        self.check_btn.grid(row=0, column=0, sticky=tk.W, **padding)
-
-        self.pair_btn = ttk.Button(
-            cam_action_frame,
-            text="Виконати сполучення (EncryptPair)",
-            command=lambda: self.start_calibration("EncryptPair", "CameraCalib"),
-        )
-        self.pair_btn.grid(row=0, column=1, sticky=tk.W, **padding)
-
-        cam_options_frame = ttk.LabelFrame(camera_tab, text="Налаштування сполучення")
-        cam_options_frame.pack(fill=tk.X, padx=10, pady=0)
-
-        ttk.Label(cam_options_frame, text="Ключ (32 байти, hex):").grid(
-            row=0, column=0, sticky=tk.W, **padding
-        )
-        self.key_var = tk.StringVar()
-        ttk.Entry(cam_options_frame, textvariable=self.key_var, width=68).grid(
-            row=0, column=1, columnspan=2, sticky=tk.W, **padding
-        )
-
-        self.force_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(
-            cam_options_frame,
-            text="Примусово (force)",
-            variable=self.force_var,
-        ).grid(row=1, column=0, sticky=tk.W, **padding)
-
-        warning_label = ttk.Label(
-            camera_tab,
-            text=(
-                "УВАГА: Функції калібрування камери призначені лише для Phantom 3 Professional/Advanced. "
-                "Неправильне використання, особливо EncryptPair, може назавжди заблокувати камеру. "
-                "Використовуйте на свій страх і ризик."
-            ),
-            wraplength=780,
-            justify=tk.LEFT,
-            foreground="red",
-        )
-        warning_label.pack(fill=tk.X, padx=10, pady=10)
-
-        # --- Flight Controller Parameters Tab
-        flyc_action_frame = ttk.LabelFrame(flyc_tab, text="Операції з параметрами")
-        flyc_action_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        self.list_btn = ttk.Button(
-            flyc_action_frame,
-            text="Список параметрів (list)",
-            command=lambda: self.start_calibration("list", "FlycParam"),
-        )
-        self.list_btn.grid(row=0, column=0, sticky=tk.W, **padding)
-
-        self.get_btn = ttk.Button(
-            flyc_action_frame,
-            text="Отримати параметр (get)",
-            command=lambda: self.start_calibration("get", "FlycParam"),
-        )
-        self.get_btn.grid(row=0, column=1, sticky=tk.W, **padding)
-
-        self.set_btn = ttk.Button(
-            flyc_action_frame,
-            text="Встановити параметр (set)",
-            command=lambda: self.start_calibration("set", "FlycParam"),
-        )
-        self.set_btn.grid(row=0, column=2, sticky=tk.W, **padding)
-
-        flyc_options_frame = ttk.LabelFrame(flyc_tab, text="Налаштування операцій")
-        flyc_options_frame.pack(fill=tk.X, padx=10, pady=0)
-
-        ttk.Label(flyc_options_frame, text="Ім'я/хеш:").grid(row=0, column=0, sticky=tk.W, **padding)
-        self.param_name_var = tk.StringVar()
-        ttk.Entry(flyc_options_frame, textvariable=self.param_name_var, width=40).grid(
-            row=0, column=1, sticky=tk.W, **padding
-        )
-
-        ttk.Label(flyc_options_frame, text="Значення:").grid(row=1, column=0, sticky=tk.W, **padding)
-        self.param_value_var = tk.StringVar()
-        ttk.Entry(flyc_options_frame, textvariable=self.param_value_var, width=40).grid(
-            row=1, column=1, sticky=tk.W, **padding
-        )
-
-        ttk.Label(flyc_options_frame, text="Індекс / кількість:").grid(
-            row=0, column=2, sticky=tk.W, **padding
-        )
-        self.param_start_var = tk.IntVar(value=0)
-        self.param_count_var = tk.IntVar(value=100)
-        ttk.Spinbox(
-            flyc_options_frame, from_=0, to=10000, textvariable=self.param_start_var, width=6
-        ).grid(row=0, column=3, sticky=tk.W, **padding)
-        ttk.Spinbox(
-            flyc_options_frame, from_=1, to=10000, textvariable=self.param_count_var, width=6
-        ).grid(row=0, column=4, sticky=tk.W, **padding)
-
-        self.alt_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(
-            flyc_options_frame,
-            text="Альтернативний метод (alt)",
-            variable=self.alt_var,
-        ).grid(row=1, column=2, sticky=tk.W, **padding)
-
-        flyc_warning_label = ttk.Label(
-            flyc_tab,
-            text=(
-                "УВАГА: Неправильна зміна параметрів Flight Controller може призвести до "
-                "нестабільної роботи або повної відмови дрона. Використовуйте лише "
-                "якщо ви повністю розумієте, що робите."
-            ),
-            wraplength=780,
-            justify=tk.LEFT,
-            foreground="orange",
-        )
-        flyc_warning_label.pack(fill=tk.X, padx=10, pady=10)
-
         # --- Guides tab
         guides_text = tk.Text(guides_tab, wrap=tk.WORD, state=tk.NORMAL)
         guides_text.insert(
@@ -718,7 +562,7 @@ class CalibrationApp(tk.Tk):
             self.port_combo.set("")
         self.status_var.set(f"Доступні порти: {len(ports)}")
 
-    def start_calibration(self, mode: str, service: str = "GimbalCalib") -> None:
+    def start_calibration(self, mode: str) -> None:
         if self.current_process is not None:
             messagebox.showwarning("Процес вже виконується", "Дочекайтесь завершення поточного процесу.")
             return
@@ -742,24 +586,16 @@ class CalibrationApp(tk.Tk):
             port=port_value,
             product_code=product_code,
             mode=mode,
-            service=service,
             verbose=int(self.verbose_var.get()),
             timeout_ms=int(self.timeout_var.get()),
             bulk=bulk_mode,
-            key=self.key_var.get() or None,
-            force=self.force_var.get(),
-            param_name=self.param_name_var.get() or None,
-            param_value=self.param_value_var.get() or None,
-            start=self.param_start_var.get(),
-            count=self.param_count_var.get(),
-            alt=self.alt_var.get(),
         )
 
         self._append_log(
-            f"\n=== Старт процедури {service}/{mode} для {selected_label} (код {product_code}) "
+            f"\n=== Старт калібрування {mode} для {selected_label} (код {product_code}) "
             f"— {time.strftime('%H:%M:%S')} ===\n"
         )
-        self.status_var.set(f"Виконується: {service}/{mode}…")
+        self.status_var.set("Виконується калібрування…")
         self._toggle_buttons(active=False)
 
         self.current_process = CalibrationProcess(command, self.log_queue)
@@ -774,15 +610,8 @@ class CalibrationApp(tk.Tk):
     def _toggle_buttons(self, active: bool) -> None:
         state_main = tk.NORMAL if active else tk.DISABLED
         state_stop = tk.DISABLED if active else tk.NORMAL
-
         self.coarse_btn.configure(state=state_main)
         self.linear_btn.configure(state=state_main)
-        self.check_btn.configure(state=state_main)
-        self.pair_btn.configure(state=state_main)
-        self.list_btn.configure(state=state_main)
-        self.get_btn.configure(state=state_main)
-        self.set_btn.configure(state=state_main)
-
         self.stop_btn.configure(state=state_stop)
 
     def _append_log(self, message: str) -> None:
