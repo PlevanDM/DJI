@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Price Jump Monitor</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Price intelligence dashboard</p>
+          <h1>Price Jump Monitor</h1>
+          <p class="subhead">
+            Track spikes and drops in your product prices so you can react faster
+            than the competition.
+          </p>
+        </div>
+        <div class="hero-cards">
+          <div class="chip">Highlight spikes and drops</div>
+          <div class="chip">Adjust alert thresholds</div>
+          <div class="chip">Import your own CSV data</div>
+        </div>
+      </header>
+
+      <section class="controls card">
+        <div class="field">
+          <label for="productSelect">Product</label>
+          <select id="productSelect"></select>
+        </div>
+        <div class="field">
+          <label for="threshold">Spike or drop threshold (%)</label>
+          <input id="threshold" type="number" min="1" step="0.5" value="8">
+        </div>
+        <div class="field">
+          <label for="maWindow">Moving average window (periods)</label>
+          <input id="maWindow" type="number" min="2" step="1" value="3">
+        </div>
+        <button id="refreshBtn" class="primary">Update view</button>
+      </section>
+
+      <section class="chart card">
+        <div class="chart-header">
+          <h2>Price trend</h2>
+          <p class="muted">Orange points are spikes. Blue points are drops.</p>
+        </div>
+        <canvas id="priceChart" height="120"></canvas>
+      </section>
+
+      <section class="insights">
+        <div class="card">
+          <h2>Alerts</h2>
+          <div id="alertList" class="alert-list"></div>
+        </div>
+        <div class="card">
+          <h2>Summary</h2>
+          <div id="summary" class="summary"></div>
+        </div>
+      </section>
+
+      <section class="import card">
+        <h2>Add product data</h2>
+        <p class="muted">
+          Upload a CSV or paste it below with columns: <strong>date,price</strong>.
+        </p>
+        <div class="import-grid">
+          <div class="field">
+            <label for="newProductName">New product name</label>
+            <input id="newProductName" type="text" placeholder="Portable Station X">
+          </div>
+          <div class="field">
+            <label for="csvFile">CSV file</label>
+            <input id="csvFile" type="file" accept=".csv">
+          </div>
+          <button id="importBtn" class="primary">Import CSV</button>
+        </div>
+        <textarea id="csvSample" rows="6">date,price
+2026-01-01,419
+2026-01-08,422
+2026-01-15,398
+2026-01-22,407
+2026-01-29,451</textarea>
+        <div id="importStatus" class="muted"></div>
+      </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
