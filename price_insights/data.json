@@ -1,0 +1,52 @@
+{
+  "products": [
+    {
+      "name": "Power Station Delta 2",
+      "currency": "USD",
+      "series": [
+        { "date": "2025-11-25", "price": 999 },
+        { "date": "2025-12-02", "price": 979 },
+        { "date": "2025-12-09", "price": 985 },
+        { "date": "2025-12-16", "price": 912 },
+        { "date": "2025-12-23", "price": 905 },
+        { "date": "2025-12-30", "price": 948 },
+        { "date": "2026-01-06", "price": 1025 },
+        { "date": "2026-01-13", "price": 1012 },
+        { "date": "2026-01-20", "price": 990 },
+        { "date": "2026-01-27", "price": 1068 }
+      ]
+    },
+    {
+      "name": "Compact Battery Pack",
+      "currency": "USD",
+      "series": [
+        { "date": "2025-11-25", "price": 229 },
+        { "date": "2025-12-02", "price": 225 },
+        { "date": "2025-12-09", "price": 210 },
+        { "date": "2025-12-16", "price": 215 },
+        { "date": "2025-12-23", "price": 248 },
+        { "date": "2025-12-30", "price": 252 },
+        { "date": "2026-01-06", "price": 238 },
+        { "date": "2026-01-13", "price": 241 },
+        { "date": "2026-01-20", "price": 219 },
+        { "date": "2026-01-27", "price": 224 }
+      ]
+    },
+    {
+      "name": "Solar Panel 160W",
+      "currency": "USD",
+      "series": [
+        { "date": "2025-11-25", "price": 349 },
+        { "date": "2025-12-02", "price": 346 },
+        { "date": "2025-12-09", "price": 332 },
+        { "date": "2025-12-16", "price": 339 },
+        { "date": "2025-12-23", "price": 318 },
+        { "date": "2025-12-30", "price": 325 },
+        { "date": "2026-01-06", "price": 352 },
+        { "date": "2026-01-13", "price": 347 },
+        { "date": "2026-01-20", "price": 361 },
+        { "date": "2026-01-27", "price": 334 }
+      ]
+    }
+  ]
+}
